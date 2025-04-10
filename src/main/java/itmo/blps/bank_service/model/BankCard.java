@@ -8,7 +8,7 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Entity
-@Table(name = "cards")
+@Table(name = "bank_cards")
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder(toBuilder = true)
@@ -19,12 +19,6 @@ public class BankCard {
 
     @Column(unique = true, nullable = false)
     private String number;
-
-    @Column(nullable = false)
-    private String expiration;
-
-    @Column(nullable = false)
-    private String cvv;
 
     @Column(nullable = false)
     private Double money;

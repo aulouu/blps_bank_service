@@ -120,6 +120,11 @@
 			<artifactId>springdoc-openapi-ui</artifactId>
 			<version>1.6.15</version> <!-- or your version -->
 		</dependency>
+		<dependency>
+			<groupId>com.atomikos</groupId>
+			<artifactId>transactions-spring-boot3-starter</artifactId>
+			<version>6.0.0</version>
+		</dependency>
 	</dependencies>
 
 	<build>
