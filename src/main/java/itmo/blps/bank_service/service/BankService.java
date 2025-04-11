@@ -1,114 +1,106 @@
 package itmo.blps.bank_service.service;
 
+import itmo.blps.bank_service.exception.*;
 import itmo.blps.bank_service.model.BankCard;
 import itmo.blps.bank_service.model.Operation;
 import itmo.blps.bank_service.model.OperationType;
 import itmo.blps.bank_service.repository.BankCardRepository;
 import itmo.blps.bank_service.repository.OperationRepository;
-import jakarta.transaction.UserTransaction;
+import jakarta.transaction.TransactionManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.jta.JtaTransactionManager;
+
+import java.time.LocalDateTime;
+import java.util.Optional;
+import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
 public class BankService {
     private final BankCardRepository bankCardRepository;
     private final OperationRepository operationRepository;
-    private final JtaTransactionManager transactionManager;
+    private final TransactionManager transactionManager;
 
     public Operation deposit(String cardNumber, Double amount) {
-        UserTransaction userTransaction;
         try {
-            userTransaction = transactionManager.getUserTransaction();
-            // Начинаем транзакцию
-            userTransaction.begin();
+            transactionManager.begin();
 
             try {
-                // 1. Находим карту
                 BankCard card = bankCardRepository.findByNumber(cardNumber)
-                        .orElseGet(() -> BankCard.builder().number(cardNumber).money(0.0).build());
+                        .orElseThrow(() -> new CardNotFoundException(String.format("No such card with number: %s", cardNumber)));
 
-                // 2. Проверяем сумму
                 if (amount <= 0) {
-                    throw new IllegalArgumentException("Amount must be positive");
+                    throw new NotValidInputException("Amount must be positive");
                 }
 
-                // 3. Создаем запись операции
                 Operation operation = Operation.builder()
                         .amount(amount)
                         .card(card)
                         .type(OperationType.DEPOSIT)
                         .build();
 
-                // 4. Пополняем баланс
                 card.setMoney(card.getMoney() + amount);
-
-                // 5. Сохраняем изменения
                 bankCardRepository.save(card);
                 operationRepository.save(operation);
 
-                // Фиксируем транзакцию
-                userTransaction.commit();
+                transactionManager.commit();
 
                 return operation;
             } catch (Exception e) {
-                // Откатываем при ошибке
-                userTransaction.rollback();
-                throw new RuntimeException("Deposit failed", e);
+                transactionManager.rollback();
+                throw new FailTransactionException(String.format("Deposit failed with error: %s", e.getMessage()));
             }
         } catch (Exception e) {
-            throw new RuntimeException("Transaction error", e);
+            throw new FailTransactionException(String.format("Transaction error: %s", e));
         }
     }
 
     public void withdraw(String cardNumber, Double amount) {
-        UserTransaction userTransaction;
         try {
-            userTransaction = transactionManager.getUserTransaction();
-            // Начинаем транзакцию
-            if (userTransaction != null) userTransaction.begin();
+            transactionManager.begin();
             try {
-                // 1. Находим карту
                 BankCard card = bankCardRepository.findByNumber(cardNumber)
-                        .orElseGet(() -> BankCard.builder().number(cardNumber).money(0.0).build());
+                        .orElseThrow(() -> new CardNotFoundException(String.format("No such card with number: %s", cardNumber)));
 
-                // 2. Проверяем сумму и баланс
                 if (amount <= 0) {
-                    throw new IllegalArgumentException("Amount must be positive");
+                    throw new NotValidInputException("Amount must be positive");
                 }
                 if (card.getMoney() < amount) {
-                    throw new IllegalArgumentException("Insufficient funds");
+                    throw new NotEnoughMoneyException("Not enough money at bank card");
                 }
 
-                // 3. Создаем запись операции
                 Operation operation = Operation.builder()
                         .amount(amount)
                         .card(card)
                         .type(OperationType.WITHDRAWAL)
+                        .timestamp(LocalDateTime.now())
                         .build();
 
-                // 4. Списываем средства
                 card.setMoney(card.getMoney() - amount);
-
-                // 5. Сохраняем изменения
                 bankCardRepository.save(card);
                 operationRepository.save(operation);
 
-                // Фиксируем транзакцию
-                userTransaction.commit();
-
-//                return operation;
+                transactionManager.commit();
             } catch (Exception e) {
-                // Откатываем при ошибке
-                userTransaction.rollback();
-                System.out.println(e.getMessage());
-                throw new RuntimeException("Withdrawal failed", e);
+                transactionManager.rollback();
+                throw new FailTransactionException(String.format("Withdraw failed with error: %s", e.getMessage()));
             }
         } catch (Exception e) {
-            System.out.println(e.getMessage());
-            throw new RuntimeException("Transaction error", e);
+            throw new FailTransactionException(String.format("Transaction error: %s", e));
         }
+    }
+
+    public void createNewCard(String cardNumber) {
+        Optional<BankCard> tryCard = bankCardRepository.findByNumber(cardNumber);
+        if (tryCard.isPresent()) {
+            throw new CardAlreadyExistsException(String.format("Card with number: %s already exists", cardNumber));
+        }
+        BankCard card = bankCardRepository.findByNumber(cardNumber)
+                .orElseGet(() -> BankCard.builder()
+                        .number(cardNumber)
+                        .money(ThreadLocalRandom.current().nextDouble(1000, 50000)) // Случайное значение от 1000 до 50000
+                        .build());
+        bankCardRepository.save(card);
     }
 
 }

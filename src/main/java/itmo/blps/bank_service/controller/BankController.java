@@ -1,6 +1,7 @@
 package itmo.blps.bank_service.controller;
 
 import itmo.blps.bank_service.dto.request.BalanceRequest;
+import itmo.blps.bank_service.dto.request.NewCardRequest;
 import itmo.blps.bank_service.model.Operation;
 import itmo.blps.bank_service.service.BankService;
 import jakarta.validation.Valid;
@@ -31,6 +32,17 @@ public class BankController {
             @RequestBody @Valid BalanceRequest balanceRequest) {
         try {
             bankService.withdraw(balanceRequest.getNumber(), balanceRequest.getMoney());
+            return ResponseEntity.ok("success");
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().build();
+        }
+    }
+
+    @PostMapping("/create")
+    public ResponseEntity<String> create(
+            @RequestBody @Valid NewCardRequest newCardRequest) {
+        try {
+            bankService.createNewCard(newCardRequest.getNumber());
             return ResponseEntity.ok("success");
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
