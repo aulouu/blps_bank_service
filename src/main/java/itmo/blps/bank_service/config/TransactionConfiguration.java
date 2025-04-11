@@ -33,7 +33,7 @@ public class TransactionConfiguration {
 
         AtomikosDataSourceBean atomikosDataSource = new AtomikosDataSourceBean();
         atomikosDataSource.setXaDataSource(pgxaDataSource);
-        atomikosDataSource.setUniqueResourceName("ordersXADS");
+        atomikosDataSource.setUniqueResourceName("bankXADS");
         atomikosDataSource.setMinPoolSize(5);
         atomikosDataSource.setMaxPoolSize(20);
         return atomikosDataSource;
