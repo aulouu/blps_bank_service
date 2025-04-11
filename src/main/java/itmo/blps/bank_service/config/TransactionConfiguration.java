@@ -56,7 +56,7 @@ public class TransactionConfiguration {
         LocalContainerEntityManagerFactoryBean em = new LocalContainerEntityManagerFactoryBean();
         em.setJtaDataSource(dataSource());
         em.setJpaVendorAdapter(jpaVendorAdapter);
-        em.setPackagesToScan("itmo.blps.model");
+        em.setPackagesToScan("itmo.blps.bank_service.model");
 
         Properties properties = new Properties();
         properties.put("hibernate.hbm2ddl.auto", "none");
