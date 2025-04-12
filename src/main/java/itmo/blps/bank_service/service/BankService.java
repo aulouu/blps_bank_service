@@ -98,7 +98,7 @@ public class BankService {
         BankCard card = bankCardRepository.findByNumber(cardNumber)
                 .orElseGet(() -> BankCard.builder()
                         .number(cardNumber)
-                        .money(ThreadLocalRandom.current().nextDouble(1000, 50000)) // Случайное значение от 1000 до 50000
+                        .money(ThreadLocalRandom.current().nextDouble(1000, 50000))
                         .build());
         bankCardRepository.save(card);
     }

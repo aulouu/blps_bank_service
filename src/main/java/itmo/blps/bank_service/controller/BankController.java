@@ -7,6 +7,7 @@ import itmo.blps.bank_service.service.BankService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 
 @RequiredArgsConstructor
@@ -30,22 +31,22 @@ public class BankController {
     @PostMapping("/withdraw")
     public ResponseEntity<String> withdraw(
             @RequestBody @Valid BalanceRequest balanceRequest) {
-        try {
+//        try {
             bankService.withdraw(balanceRequest.getNumber(), balanceRequest.getMoney());
             return ResponseEntity.ok("success");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
+//        } catch (Exception e) {
+//            return ResponseEntity.body(e).build();
+//        }
     }
 
     @PostMapping("/create")
     public ResponseEntity<String> create(
             @RequestBody @Valid NewCardRequest newCardRequest) {
-        try {
+//        try {
             bankService.createNewCard(newCardRequest.getNumber());
             return ResponseEntity.ok("success");
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().build();
-        }
+//        } catch (Exception e) {
+//            return ResponseEntity.badRequest().build();
+//        }
     }
 }
