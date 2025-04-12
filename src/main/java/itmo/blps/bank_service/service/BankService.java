@@ -6,6 +6,7 @@ import itmo.blps.bank_service.model.Operation;
 import itmo.blps.bank_service.model.OperationType;
 import itmo.blps.bank_service.repository.BankCardRepository;
 import itmo.blps.bank_service.repository.OperationRepository;
+import jakarta.transaction.SystemException;
 import jakarta.transaction.TransactionManager;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -21,72 +22,39 @@ public class BankService {
     private final OperationRepository operationRepository;
     private final TransactionManager transactionManager;
 
-    public Operation deposit(String cardNumber, Double amount) {
-        try {
-            transactionManager.begin();
-
-            try {
-                BankCard card = bankCardRepository.findByNumber(cardNumber)
-                        .orElseThrow(() -> new CardNotFoundException(String.format("No such card with number: %s", cardNumber)));
-
-                if (amount <= 0) {
-                    throw new NotValidInputException("Amount must be positive");
-                }
-
-                Operation operation = Operation.builder()
-                        .amount(amount)
-                        .card(card)
-                        .type(OperationType.DEPOSIT)
-                        .build();
-
-                card.setMoney(card.getMoney() + amount);
-                bankCardRepository.save(card);
-                operationRepository.save(operation);
-
-                transactionManager.commit();
-
-                return operation;
-            } catch (Exception e) {
-                transactionManager.rollback();
-                throw new FailTransactionException(String.format("Deposit failed with error: %s", e.getMessage()));
-            }
-        } catch (Exception e) {
-            throw new FailTransactionException(String.format("Transaction error: %s", e));
-        }
-    }
-
     public void withdraw(String cardNumber, Double amount) {
         try {
             transactionManager.begin();
-            try {
-                BankCard card = bankCardRepository.findByNumber(cardNumber)
-                        .orElseThrow(() -> new CardNotFoundException(String.format("No such card with number: %s", cardNumber)));
 
-                if (amount <= 0) {
-                    throw new NotValidInputException("Amount must be positive");
-                }
-                if (card.getMoney() < amount) {
-                    throw new NotEnoughMoneyException("Not enough money at bank card");
-                }
+            BankCard card = bankCardRepository.findByNumber(cardNumber)
+                    .orElseThrow(() -> new CardNotFoundException(String.format("No such card with number: %s", cardNumber)));
 
-                Operation operation = Operation.builder()
-                        .amount(amount)
-                        .card(card)
-                        .type(OperationType.WITHDRAWAL)
-                        .timestamp(LocalDateTime.now())
-                        .build();
-
-                card.setMoney(card.getMoney() - amount);
-                bankCardRepository.save(card);
-                operationRepository.save(operation);
-
-                transactionManager.commit();
-            } catch (Exception e) {
-                transactionManager.rollback();
-                throw new FailTransactionException(String.format("Withdraw failed with error: %s", e.getMessage()));
+            if (amount <= 0) {
+                throw new NotValidInputException("Amount must be positive");
             }
+            if (card.getMoney() < amount) {
+                throw new NotEnoughMoneyException("Not enough money at bank card");
+            }
+
+            Operation operation = Operation.builder()
+                    .amount(amount)
+                    .card(card)
+                    .type(OperationType.WITHDRAWAL)
+                    .timestamp(LocalDateTime.now())
+                    .build();
+
+            card.setMoney(card.getMoney() - amount);
+            bankCardRepository.save(card);
+            operationRepository.save(operation);
+
+            transactionManager.commit();
         } catch (Exception e) {
-            throw new FailTransactionException(String.format("Transaction error: %s", e));
+            try {
+                transactionManager.rollback();
+            } catch (SystemException ex) {
+                throw new FailTransactionException("Failed to rollback transaction");
+            }
+            throw new FailTransactionException("Withdraw failed with error: " + e.getMessage());
         }
     }
 

@@ -49,10 +49,10 @@ public class GlobalControllerExceptionHandler {
         System.err.println(errorMessage);
         e.printStackTrace();
         return ResponseEntity
-            .status(HttpStatus.INTERNAL_SERVER_ERROR)
-            .body(new ErrorResponse(
-                    myText
-            ));
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(
+                        myText
+                ));
     }
 
     @ExceptionHandler
