@@ -1,13 +1,17 @@
 package itmo.blps.bank_service.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import itmo.blps.bank_service.dto.request.BalanceRequest;
 import itmo.blps.bank_service.dto.request.EventRequest;
 import itmo.blps.bank_service.dto.response.EventResponse;
 import jakarta.jms.Queue;
+import java.util.Map;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.messaging.handler.annotation.Header;
+import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -19,17 +23,27 @@ public class PaymentListener {
     private final Queue orderPaymentQueue;
 
     @JmsListener(destination = "order.payment.queue")
-    public void processPayment(EventRequest eventRequest) {
+    public void processPayment(@Payload Map<String, Object> payload,
+                               @Header(name = "_type", required = false) String type) {
+
         EventResponse response = new EventResponse();
-        response.setTransactionId(eventRequest.getTransactionId());
+
         try {
-            bankService.withdraw(eventRequest.getNumber(), eventRequest.getMoney());
+            // Извлекаем данные из Map
+            String correlationId = (String) payload.get("correlationId");
+            String number = (String) payload.get("number");
+            Double money = (Double) payload.get("money");
+
+            response.setCorrelationId(correlationId);
+
+            bankService.withdraw(number, money);
             response.setSuccess(true);
+
         } catch (Exception e) {
             response.setSuccess(false);
-            log.error("Payment processing failed for transaction: {}", eventRequest.getTransactionId(), e);
-            log.error("Unexpected error processing event: ", e);
+            log.error("Payment processing failed", e);
         }
+
         jmsTemplate.convertAndSend(orderPaymentQueue, response);
     }
 }

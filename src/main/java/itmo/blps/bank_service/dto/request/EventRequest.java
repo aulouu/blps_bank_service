@@ -1,14 +1,18 @@
 package itmo.blps.bank_service.dto.request;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.*;
 
+import java.io.Serializable;
+
 @Data
-@Builder(toBuilder = true)
-@Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class EventRequest {
-    private String transactionId;
+@JsonIgnoreProperties(ignoreUnknown = true)
+public class EventRequest implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    private String correlationId;
     private String number;
     private Double money;
 }
