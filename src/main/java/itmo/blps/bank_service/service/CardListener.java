@@ -8,9 +8,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jms.annotation.JmsListener;
 import org.springframework.jms.core.JmsTemplate;
-import org.springframework.messaging.MessageHeaders;
-import org.springframework.messaging.handler.annotation.Header;
-import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -48,9 +45,5 @@ public class CardListener {
                 return m;
             });
         }
-//        jmsTemplate.convertAndSend(cardSubmitQueue, success, m -> {
-//            m.setJMSCorrelationID(correlationId);
-//            return m;
-//        });
     }
 }
