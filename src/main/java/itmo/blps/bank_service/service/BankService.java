@@ -24,7 +24,7 @@ public class BankService {
 
     public void withdraw(String cardNumber, Double amount) {
         try {
-            transactionManager.begin();
+//            transactionManager.begin();
 
             BankCard card = bankCardRepository.findByNumber(cardNumber)
                     .orElseThrow(() -> new CardNotFoundException(String.format("No such card with number: %s", cardNumber)));
@@ -47,13 +47,13 @@ public class BankService {
             bankCardRepository.save(card);
             operationRepository.save(operation);
 
-            transactionManager.commit();
+//            transactionManager.commit();
         } catch (Exception e) {
-            try {
-                transactionManager.rollback();
-            } catch (SystemException ex) {
-                throw new FailTransactionException("Failed to rollback transaction");
-            }
+//            try {
+//                transactionManager.rollback();
+//            } catch (SystemException ex) {
+//                throw new FailTransactionException("Failed to rollback transaction");
+//            }
             throw new FailTransactionException("Withdraw failed with error: " + e.getMessage());
         }
     }
